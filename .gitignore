@@ -1,0 +1,12 @@
+# generic
+*.pyc
+*.pyo
+*.sw*
+*~
+*.egg-info
+.DS_Store
+.Python
+Paste*
+nohup.out
+setuptools-*
+venv/*
