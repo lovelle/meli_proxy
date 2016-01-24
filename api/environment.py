@@ -12,7 +12,7 @@ from werkzeug.contrib.fixers import ProxyFix
 from .utils import write_stderr, setup_log_handlers
 
 
-def load_app(app_name, app_path, settings_override, register_security_blueprint):
+def load_app(app_name, settings_override):
     conf_file = os.environ.get('CONFIG_FILE')
 
     app = Flask(app_name, instance_relative_config=True)
@@ -27,6 +27,20 @@ def load_app(app_name, app_path, settings_override, register_security_blueprint)
         datefmt=app.config.get("LOGGER_DATE"),
         formfmt=app.config.get("LOGGER_FORMAT")
     )
+
+    app.statics = {}
+    basic_stats = {
+        'request_slower': 0.0,
+        'request_faster': 0.0,
+        'requests_failed': 0,
+        'requests_successful': 0,
+        'requests_total_processed': 0,
+        'requests_total_received': 0,
+    }
+
+    for i in app.config.get('LB_SERVERS'):
+        server = "%s|%s" % (app.config.get("SERVER"), i.get('uid'))
+        app.statics[server] = basic_stats
 
     app.wsgi_app = ProxyFix(app.wsgi_app)
 

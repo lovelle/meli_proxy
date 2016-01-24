@@ -32,7 +32,7 @@ def url(app, url_rule, import_name, methods, desc):
     if hasattr(import_name, '__call__'):
         view = import_name
     else:
-        view = LazyView("%s.%s" % ("http", import_name))
+        view = LazyView("%s.%s" % ("api", import_name))
 
     app.add_url_rule(url_rule, view_func=view, methods=methods)
     app.add_url_rule(url_rule + ".<string(minlength=3, maxlength=4):format>",

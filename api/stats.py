@@ -6,10 +6,11 @@
     api stats info
 """
 
+from .decorators import dictify
+from .exceptions import MeliForbidden
 from flask import (
     request,
     jsonify,
-    render_template,
     current_app as app
 )
 
@@ -19,5 +20,6 @@ def routes():
         ((i[2], i[0]) for i in app.url_routes)
     )
 
+@dictify
 def info():
-    return "info"
+    return app.statics

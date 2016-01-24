@@ -6,10 +6,10 @@
     api core logic
 """
 
-import os
-
 from flask import request, json, current_app as app
 from flask.views import MethodView
+
+from .lb.stateless import StateLess
 
 from .decorators import dictify
 from .exceptions import (
@@ -26,8 +26,19 @@ class MeliProxy(MethodView):
     def __init__(self):
         self.method = request.args if request.method == "GET" else request.post
 
-    def get(self, format="json"):
+    def get(self, query, format="json"):
         app.log.debug("received new request")
+
+        if not query:
+            raise MeliBadRequest
+
+        lb = StateLess(request.remote_addr, query)
+
+        if not lb.load_balance("1", "*"):
+            raise MeliServiceUnavailable("Service overloaded")
+
+        print lb.node
+
         return "WIP"
 
     def post(self):
