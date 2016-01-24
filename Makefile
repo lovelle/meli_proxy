@@ -1,6 +1,7 @@
 build:
 	virtualenv venv
 	venv/bin/pip install -r requirements.txt
+	venv/bin/pip install -r requirements-deploy.txt
 
 clean:
 	rm -rf .Python build dist venv* *.egg-info *.egg
