@@ -1,6 +1,3 @@
-# meli_proxy
-Proxy for Meli - incoming data handler
-
 meli_proxy
 ===
 Meli Proxy - incoming data handler
