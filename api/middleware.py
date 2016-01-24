@@ -20,9 +20,8 @@ from .exceptions import (
 )
 
 
-def make_app(settings_override=None, register_security_blueprint=False):
-    app = load_app(__name__, 'path', settings_override,
-                   register_security_blueprint=register_security_blueprint)
+def make_app(settings_override=None):
+    app = load_app(__name__, settings_override)
 
     r = HandleRequest()
     e = HandleErrors()
