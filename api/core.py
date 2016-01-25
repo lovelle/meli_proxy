@@ -11,7 +11,7 @@ import requests
 from flask import request, json, current_app as app
 from flask.views import MethodView
 
-from .lb.stateless import StateLess
+from .lb.stateful import StateFul
 
 from .decorators import dictify
 from .exceptions import (
@@ -35,7 +35,7 @@ class MeliProxy(MethodView):
         if not query:
             raise MeliBadRequest
 
-        lb = StateLess(request.remote_addr, query)
+        lb = StateFul(request.remote_addr, query)
 
         if not lb.load_balance("1", "*"):
             raise MeliServiceUnavailable("Service overloaded")
