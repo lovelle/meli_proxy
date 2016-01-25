@@ -7,6 +7,7 @@
 """
 
 import sys
+import redis
 import logging
 
 from .helpers import LazyView
@@ -48,3 +49,47 @@ def write_stderr(s, log=None):
     else:
         log.error(s)
     sys.exit(1)
+
+
+class RedisHandler(object):
+    instances = {
+        "master": {"host": "localhost", "port": 6379, "tout": 2},
+        "slave": {"host": "localhost", "port": 6379, "tout": 2}
+    }
+
+    def __init__(self, conf, environ=False):
+        self.instances["master"]["host"] = conf.get("REDIS_MASTER_HOST")
+        self.instances["master"]["port"] = int(conf.get("REDIS_MASTER_PORT", 6379))
+        self.instances["master"]["tout"] = int(conf.get("REDIS_MASTER_TIMEOUT", 5))
+        self.instances["slave"]["host"] = conf.get("REDIS_SLAVE_HOST")
+        self.instances["slave"]["port"] = int(conf.get("REDIS_SLAVE_PORT", 6379))
+        self.instances["slave"]["tout"] = int(conf.get("REDIS_SLAVE_TIMEOUT", 5))
+        self.environ = environ
+
+    def __enter__(self):
+        return self.std_connection() if self.environ is False else self.pool_connection()
+
+    def std_connection(self):
+        return (self.__connect(k) for k in self.instances.iterkeys())
+
+    def pool_connection(self):
+        return self.__connect(self.environ)
+
+    def __connect(self, env):
+        try:
+            self.instances[env]["handler"] = redis.ConnectionPool(
+                host=self.instances[env]["host"],
+                port=self.instances[env]["port"],
+                socket_timeout=self.instances[env]["tout"],
+                db=0
+            )
+            r = redis.Redis(connection_pool=self.instances[env]["handler"])
+            r.ping()
+        except Exception, e:
+            return str(e)
+        else:
+            return r
+
+    def __exit__(self, *kwargs):
+        [i["handler"].disconnect() for i in self.instances.values()
+            if "handler" in i] if self.environ is False else None

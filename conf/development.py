@@ -28,4 +28,12 @@ LB_SERVERS = [
 	{"uid": 0, "gid": 1, "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0}
 ]
 
+REDIS_SLAVE_HOST = "127.0.0.1"
+REDIS_SLAVE_PORT = 6379
+REDIS_SLAVE_TIMEOUT = 2
+
+REDIS_MASTER_HOST = "127.0.0.1"
+REDIS_MASTER_PORT = 6379
+REDIS_MASTER_TIMEOUT = 2
+
 # ip de origen o token para la restriccion por origen?

@@ -10,10 +10,24 @@ import random
 
 from flask import request, json, current_app as app
 
-# from .exceptions import MeliBadRequest
+from ..exceptions import MeliBadRequest, MeliServiceUnavailable
 
 
-class StateLess(object):
+class Lb(object):
+    def __init__(self):
+        self.r = self.r = self.__redis_connect()
+
+    def __redis_connect(self):
+        environ = "slave"# "master"
+
+        with RedisHandler(app.config, environ=environ) as obj:
+            if isinstance(obj, basestring):
+                raise MeliServiceUnavailable(obj)
+            else:
+                return obj
+
+
+class StateLess(Lb):
     def __init__(self, remote, query):
         self.rip = remote 
         self.qry = query
