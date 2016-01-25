@@ -28,6 +28,7 @@ def load_app(app_name, settings_override):
         formfmt=app.config.get("LOGGER_FORMAT")
     )
 
+    app.servers = app.config.get('LB_SERVERS')
     app.statics = {}
     basic_stats = {
         'request_slower': 0.0,
@@ -38,8 +39,8 @@ def load_app(app_name, settings_override):
         'requests_total_received': 0,
     }
 
-    for i in app.config.get('LB_SERVERS'):
-        server = "%s|%s" % (app.config.get("SERVER"), i.get('uid'))
+    for i in app.servers:
+        server = "%s|%s" % (app.config.get('SERVER'), i.get('uid'))
         app.statics[server] = basic_stats
 
     app.wsgi_app = ProxyFix(app.wsgi_app)

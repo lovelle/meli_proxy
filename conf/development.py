@@ -22,9 +22,10 @@ LOGGER_DATE = "%d-%m-%Y %H:%M:%S"
 
 
 LB_SERVERS = [
-	{"uid": 0, "gid": 1, "enabled": True, "host": "127.0.0.1", "port": 9000, "resources": "*=100;"},
-	{"uid": 1, "gid": 1, "enabled": True, "host": "127.0.0.1", "port": 9001, "resources": "*=100;"},
-	{"uid": 2, "gid": 1, "enabled": True, "host": "127.0.0.1", "port": 9002, "resources": "*=100;"},
+	#{"uid": 0, "gid": 1, "enabled": True, "uri": "https://127.0.0.1:9000", "resources": "*=100;", "load": 0},
+	#{"uid": 1, "gid": 1, "enabled": True, "uri": "https://127.0.0.1:9001", "resources": "*=100;", "load": 0},
+	#{"uid": 2, "gid": 1, "enabled": True, "uri": "https://127.0.0.1:9002", "resources": "*=100;", "load": 0},
+	{"uid": 0, "gid": 1, "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0}
 ]
 
 # ip de origen o token para la restriccion por origen?

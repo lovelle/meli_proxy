@@ -6,9 +6,10 @@
     load balancer module in stateless mode
 """
 
+import random
+
 from flask import request, json, current_app as app
 
-# from .logic.stateless import StateLess
 # from .exceptions import MeliBadRequest
 
 
@@ -18,5 +19,8 @@ class StateLess(object):
         self.qry = query
 
     def load_balance(self, gid, resource):
-        self.node = 2
+        self.node = self.get_node_randomly()
         return True
+
+    def get_node_randomly(self):
+        return random.choice(app.servers)

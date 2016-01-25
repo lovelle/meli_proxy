@@ -21,7 +21,7 @@ def dictify(fn):
 
     def response(fmt, data):
         if fmt == "json":
-            return jsonify(results=data)
+            return jsonify(**data)
         elif fmt == "xml":
             return Response(xml(data, root=True), mimetype='application/xml')
         else:
