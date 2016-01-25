@@ -9,7 +9,7 @@
 import os
 from flask import Flask
 from werkzeug.contrib.fixers import ProxyFix
-from .utils import write_stderr, setup_log_handlers
+from .utils import write_stderr, setup_log_handlers, RedisHandler
 
 
 def load_app(app_name, settings_override):
@@ -27,6 +27,10 @@ def load_app(app_name, settings_override):
         datefmt=app.config.get("LOGGER_DATE"),
         formfmt=app.config.get("LOGGER_FORMAT")
     )
+
+    # Check if all redis instances configured are running
+    with RedisHandler(app.config) as obj:
+        [write_stderr(i, app.log) for i in obj if isinstance(i, basestring)]
 
     app.servers = app.config.get('LB_SERVERS')
     app.statics = {}
