@@ -27,7 +27,7 @@ class Lb(object):
                 return obj
 
 
-class StateLess(Lb):
+class StateFul(Lb):
     def __init__(self, remote, query):
         self.rip = remote 
         self.qry = query
