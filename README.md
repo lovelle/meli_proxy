@@ -10,15 +10,15 @@ Installation (in dev environment)
         # Dependences for python debian/ubuntu support
         $ aptitude install python-pip python-virtualenv python-dev
         # Build lib dependences
-	$ make
+        $ make
 
 Configuration
 ----
 
         # Set custom params
-	$ editor conf/development.py
-	# set config var with path of environment
-	$ export CONFIG_FILE=/usr/src/meli_proxy/conf/development.py
+        $ editor conf/development.py
+        # set config var with path of environment
+        $ export CONFIG_FILE=/usr/src/meli_proxy/conf/development.py
 
 Run
 ----
