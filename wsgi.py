@@ -35,7 +35,7 @@ def run_gevent():
 
 
 def run_werkzeug():
-	run_simple(HOST, PORT, application, use_reloader=True, use_debugger=True)
+	run_simple(HOST, PORT, application, use_reloader=True, use_debugger=True, threaded=True)
 
 
 if __name__ == "__main__":

@@ -43,7 +43,7 @@ class StateFul(Lb):
             return True
 
     def set_incr_node(self, by):
-        self.r_m.hincrby(self.node["server"], "load", by)
+        return self.r_m.hincrby(self.node["server"], "load", by)
 
     def get_server_nodes(self):
         return [dict(self.r_s.hgetall(i), **{"server": i}) for i in self.r_s.smembers(app.redis_key_nodes)]
@@ -61,4 +61,4 @@ class StateFul(Lb):
         return [i for i in self.get_server_nodes() if bool(i.get('enabled')) is True and i.get('gid') == gid]
 
     def __del__(self):
-        self.set_incr_node(-1) if self.node else None
+        return self.set_incr_node(-1) if self.node else None
