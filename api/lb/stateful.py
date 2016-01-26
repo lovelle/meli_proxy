@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-    meli_proxy.api.lb.stateless
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    meli_proxy.api.lb.stateful
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    load balancer module in stateless mode
+    load balancer module in stateful mode
 """
 
 import random
 
 from flask import request, json, current_app as app
 
+from ..utils import RedisHandler
 from ..exceptions import MeliBadRequest, MeliServiceUnavailable
 
 
 class Lb(object):
     def __init__(self):
-        self.r = self.__redis_connect()
+        #self.r = self.redis_connect()
+        pass
 
-    def __redis_connect(self):
-        environ = "slave"# "master"
-
+    def redis_connect(self, environ="slave"):
         with RedisHandler(app.config, environ=environ) as obj:
             if isinstance(obj, basestring):
                 raise MeliServiceUnavailable(obj)
@@ -31,14 +31,26 @@ class StateFul(Lb):
     def __init__(self, remote, query):
         self.rip = remote 
         self.qry = query
+        self.r_s = self.redis_connect()
+        self.r_m = self.redis_connect("master")
 
     def load_balance(self, gid, resource):
-        #self.node = self.get_node_randomly()
+        # self.node = self.get_node_randomly()
         self.node = self.get_node_least_loaded(gid)
-        return True
+
+        if self.node:
+            self.set_incr_node(+1)
+            return True
+
+    def set_incr_node(self, by):
+        self.r_m.hincrby(self.node["server"], "load", by)
+
+    def get_server_nodes(self):
+        return [dict(self.r_s.hgetall(i), **{"server": i}) for i in self.r_s.smembers(app.redis_key_nodes)]
+        # return app.servers
 
     def get_node_randomly(self):
-        return random.choice(app.servers)
+        return random.choice(self.get_server_nodes())
 
     def get_node_least_loaded(self, gid):
         """ Get the node who has less processing requests """
@@ -46,4 +58,7 @@ class StateFul(Lb):
 
     def filer_enabled(self, gid):
         """ Filter those nodes who are enabled and has proper gid """
-        return [i for i in app.servers if bool(i.get('enabled')) is True and i.get('gid') == gid]
+        return [i for i in self.get_server_nodes() if bool(i.get('enabled')) is True and i.get('gid') == gid]
+
+    def __del__(self):
+        self.set_incr_node(-1) if self.node else None

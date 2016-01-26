@@ -25,6 +25,7 @@ from .exceptions import (
 class MeliProxy(MethodView):
 
     decorators = [dictify]
+    valid_methods = ("categories")
 
     def __init__(self):
         self.method = request.args if request.method == "GET" else request.post
@@ -37,10 +38,10 @@ class MeliProxy(MethodView):
 
         lb = StateFul(request.remote_addr, query)
 
-        if not lb.load_balance("1", "*"):
+        if not lb.load_balance("categories", "*"):
             raise MeliServiceUnavailable("Service overloaded")
 
-        r = SendRequest(lb.node)
+        r = SendRequest(lb.node, "categories")
 
         try:
             r.send(query)
@@ -73,18 +74,19 @@ class SendRequest(object):
         'Accept': 'application/json'
     }
 
-    def __init__(self, node):
+    def __init__(self, node, branch):
         self.uri = node["uri"]
         self.tout = node.get("tout", 10)
+        self.branch = branch
 
     def backend(self, query):
-        return "%s/categories/%s" % (self.uri, query)
+        return "%s/%s/%s" % (self.uri, self.branch, query)
 
     def send(self, query):
         return self.__connect(query)
 
     def __connect(self, query):
-        app.log.debug("request send: %s", query)
+        app.log.debug("sending request: %s", query)
 
         try:
             r = requests.get(self.backend(query), verify=False,

@@ -5,6 +5,16 @@ Meli Proxy - incoming data handler
 Python implementation
 ---
 
+Features
+----
+        * Load balance against multiple nodes in stateful mode
+        * Xml returning format (could be specified in the request, deafult format is json)
+
+        WIP:
+        * Stats
+        * Max requests per ip origin
+
+
 Installation (in dev environment)
 ----
         # Dependences for python debian/ubuntu support

@@ -22,10 +22,12 @@ LOGGER_DATE = "%d-%m-%Y %H:%M:%S"
 
 
 LB_SERVERS = [
-	{"uid": 0, "gid": '1', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
-	{"uid": 1, "gid": '1', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
-	{"uid": 2, "gid": '1', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
+	{"uid": 0, "gid": 'categories', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
+	#{"uid": 1, "gid": 'categories', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
+	#{"uid": 2, "gid": 'categories', "enabled": True, "uri": "https://api.mercadolibre.com", "resources": "*=100;", "load": 0},
 ]
+
+REDIS_KEY_SERVERS = "servers"
 
 REDIS_SLAVE_HOST = "127.0.0.1"
 REDIS_SLAVE_PORT = 6379

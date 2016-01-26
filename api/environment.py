@@ -32,7 +32,7 @@ def load_app(app_name, settings_override):
     with RedisHandler(app.config) as obj:
         [write_stderr(i, app.log) for i in obj if isinstance(i, basestring)]
 
-    app.servers = app.config.get('LB_SERVERS')
+    """
     app.statics = {}
     basic_stats = {
         'request_slower': 0.0,
@@ -42,10 +42,16 @@ def load_app(app_name, settings_override):
         'requests_total_processed': 0,
         'requests_total_received': 0,
     }
+    """
 
+    app.servers = app.config.get('LB_SERVERS')
+    app.redis_key_nodes = app.config.get('REDIS_KEY_SERVERS')
+
+    """
     for i in app.servers:
         server = "%s|%s" % (app.config.get('SERVER'), i.get('uid'))
         app.statics[server] = basic_stats
+    """
 
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
