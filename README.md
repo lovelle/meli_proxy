@@ -69,10 +69,18 @@ Example of servers data struct:
 You can specify any format you want, or `xml` or `json`.
 By default, if you don't specify any returning type, the default will be `json`.
 
-Example for xml: `$ curl http://127.0.0.1:8000/categories/MLA97994.xml`.
-Example for json: `$ curl http://127.0.0.1:8000/categories/MLA97994`.
-Other json example: `$ curl http://127.0.0.1:8000/categories/MLA97994.json`.
+Example for xml: 
 
+```
+$ curl http://127.0.0.1:8000/categories/MLA97994.xml
+```
+
+Example for json: 
+
+```
+$ curl http://127.0.0.1:8000/categories/MLA97994
+$ curl http://127.0.0.1:8000/categories/MLA97994.json
+```
 
 3. Statistics
 -------
