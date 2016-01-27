@@ -7,13 +7,12 @@ Python implementation
 
 Features
 ----
-        * Load balance against multiple nodes in stateful mode
-        * Xml returning format (could be specified in the request, deafult format is json)
+        * [1](#lb) Load balance against multiple nodes in stateful mode.
+        * [2](#format) Xml returning format (could be specified in the request, deafult format is json).
+        * [3](#stats) Stats.
 
         WIP:
-        * Stats
         * Max requests per ip origin
-
 
 Installation (in dev environment)
 ----
@@ -38,3 +37,44 @@ Run
         $ venv/bin/uwsgi -w wsgi --ini conf/uwsgi.ini
         # Deploy with gunicorn
         $ venv/bin/gunicorn wsgi -c conf/gunicorn.py
+
+Doc
+----
+
+1. Load balance
+-------
+
+The idea si to send requests across multiple nodes.
+
+Abilities:
+        - Grouping nodes by `group id`.
+        - Disable or enable nodes by parameter: `enabled = False|True`.
+        - Tracking load of each node in order to do load balance.
+        - Centralized data in redis db.
+
+Example of servers data struct:
+
+```
+[
+        {"uid": 0, "gid": "categories", "enabled": True, "uri": "https://api.mercadolibre.com", "load": 0},
+        {"uid": 1, "gid": "categories", "enabled": True, "uri": "https://api.mercadolibre.com", "load": 0},
+]
+```
+
+2. Handling returning format
+-------
+
+You can specify any format you want, or `xml` or `json`.
+
+By default, if you don't specify any returning type, the default will be `json`
+
+Example for xml:
+`$ curl http://127.0.0.1:8000/categories/MLA97994.xml`
+
+Example for json:
+`$ curl http://127.0.0.1:8000/categories/MLA97994`
+`$ curl http://127.0.0.1:8000/categories/MLA97994.json`
+
+
+3. Statistics
+-------
