@@ -7,9 +7,9 @@ Python implementation
 
 Features
 ----
-        * [1](#lb) Load balance against multiple nodes in stateful mode.
-        * [2](#format) Xml returning format (could be specified in the request, deafult format is json).
-        * [3](#stats) Stats.
+        * 1 [Load balance](#1-load-balance) against multiple nodes in stateful mode.
+        * 2 [Xml](#2-handling-returning-format) returning format (could be specified in the request, deafult format is json).
+        * 3 [Stats](#3-statistics).
 
         WIP:
         * Max requests per ip origin
@@ -47,10 +47,10 @@ Doc
 The idea si to send requests across multiple nodes.
 
 Abilities:
-        - Grouping nodes by `group id`.
-        - Disable or enable nodes by parameter: `enabled = False|True`.
-        - Tracking load of each node in order to do load balance.
-        - Centralized data in redis db.
+        * Grouping nodes by `group id`.
+        * Disable or enable nodes by parameter: `enabled = False|True`.
+        * Tracking load of each node in order to do load balance.
+        * Centralized data in redis db.
 
 Example of servers data struct:
 
@@ -68,12 +68,9 @@ You can specify any format you want, or `xml` or `json`.
 
 By default, if you don't specify any returning type, the default will be `json`
 
-Example for xml:
-`$ curl http://127.0.0.1:8000/categories/MLA97994.xml`
-
-Example for json:
-`$ curl http://127.0.0.1:8000/categories/MLA97994`
-`$ curl http://127.0.0.1:8000/categories/MLA97994.json`
+Example for xml: `$ curl http://127.0.0.1:8000/categories/MLA97994.xml`
+Example for json: `$ curl http://127.0.0.1:8000/categories/MLA97994`
+Other json example: `$ curl http://127.0.0.1:8000/categories/MLA97994.json`
 
 
 3. Statistics
