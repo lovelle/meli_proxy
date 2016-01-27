@@ -6,12 +6,11 @@
     api core logic
 """
 
-import requests
-
 from flask import request, json, current_app as app
 from flask.views import MethodView
 
 from .lb.stateful import StateFul
+from .http.request import HttpRequest
 
 from .decorators import dictify
 from .exceptions import (
@@ -41,7 +40,9 @@ class MeliProxy(MethodView):
         if not lb.load_balance("categories", "*"):
             raise MeliServiceUnavailable("Service overloaded")
 
-        r = SendRequest(lb.node, "categories")
+        r = HttpRequest(lb.node, "categories")
+
+        # TODO: arreglar excepciones de clases
 
         try:
             r.send(query)
@@ -65,46 +66,3 @@ class MeliProxy(MethodView):
 
     def __del__(self):
         pass
-
-
-class SendRequest(object):
-
-    headers = {
-        'Content-type': 'application/json',
-        'Accept': 'application/json'
-    }
-
-    def __init__(self, node, branch):
-        self.uri = node["uri"]
-        self.tout = node.get("tout", 10)
-        self.branch = branch
-
-    def backend(self, query):
-        return "%s/%s/%s" % (self.uri, self.branch, query)
-
-    def send(self, query):
-        return self.__connect(query)
-
-    def __connect(self, query):
-        app.log.debug("sending request: %s", query)
-
-        try:
-            r = requests.get(self.backend(query), verify=False,
-                headers=self.headers, timeout=float(self.tout))
-        except Exception, e:
-            raise MeliError(e)
-        else:
-            return self.__response(r)
-
-    def __response(self, r):
-        if r.status_code != 200:
-            raise MeliError("backend response is invalid code '%s'" % r.status_code)
-
-        try:
-            self.response = r.json()
-        except ValueError, e:
-            raise MeliError(e)
-
-        # app.log.debug("request recv: %s", self.response)
-
-        return self.response
