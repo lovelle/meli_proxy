@@ -7,9 +7,9 @@ Python implementation
 
 Features
 ----
-        * 1 [Load balance](#1-load-balance) against multiple nodes in stateful mode.
-        * 2 [Xml](#2-handling-returning-format) returning format.
-        * 3 [Stats](#3-statistics).
+        * Load balance against multiple nodes in stateful mode.
+        * Xml returning format.
+        * Stats.
 
         WIP:
         * Max requests per ip origin
