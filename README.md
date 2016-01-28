@@ -11,6 +11,7 @@ Reasons:
 
 * For fun?
 
-Implementations (for now just python, sorry):
+Implementations:
 
-* To get into python implementation go to `python` branch
+* To get into [python](https://github.com/lovelle/meli_proxy/tree/python) implementation go to `python` branch (git checkout python)
+* To get into [c](https://github.com/lovelle/meli_proxy/tree/c) api implementation go to `c` branch (git checkout c)
