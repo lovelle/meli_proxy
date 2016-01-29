@@ -3,9 +3,7 @@
 #include <kore/http.h>
 #include <kore/tasks.h>
 
-// const char *BACKEND = "http://127.0.0.1:8000/asdasd";
-//const char *BACKEND = "https://api.mercadolibre.com";
-const char *BACKEND = "https://api.mercadolibre.com/categories/MLA97994";
+const char *BACKEND = "https://api.mercadolibre.com";
 
 int	send_http(struct kore_task *);
 int	meli_proxy(struct http_request *);

@@ -28,7 +28,7 @@ int meli_proxy(struct http_request *req) {
 	u_int32_t	len;
 	struct rstate	*state;
 	char	ct[64], result[2048];
-
+	char 	url[strlen(BACKEND)+strlen(req->path)+1];
 
 	if (req->hdlr_extra == NULL) {
 
@@ -38,8 +38,15 @@ int meli_proxy(struct http_request *req) {
 		kore_task_create(&state->task, send_http);
 		kore_task_bind_request(&state->task, req);
 
+		strcpy(url, BACKEND);
+		strcat(url, req->path);
+
 		/* Start the task */
 		kore_task_run(&state->task);
+		/* write specify path */
+		kore_task_channel_write(&state->task, req->path, strlen(req->path));
+		/* write complete url */
+		kore_task_channel_write(&state->task, url, strlen(url));
 
 		/* Tell Kore to retry us later */
 		return (KORE_RESULT_RETRY);
@@ -55,7 +62,7 @@ int meli_proxy(struct http_request *req) {
 	/* Task is finished, check the result */
 	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
 		kore_task_destroy(&state->task);
-		http_response(req, 500, NULL, 0);
+		http_response(req, 500, "could not send request", 22);
 		return (KORE_RESULT_OK);
 	}
 
@@ -63,7 +70,7 @@ int meli_proxy(struct http_request *req) {
 	kore_task_channel_read(&state->task, ct, sizeof(ct));
 	
 	if (len > sizeof(result)) {
-		http_response(req, 500, NULL, 0);
+		http_response(req, 500, "response length mismatch", 24);
 	} else {
 		http_response_header(req, "Content-Type", ct);
 		http_response(req, 200, result, len);
@@ -83,22 +90,31 @@ int send_http(struct kore_task *t) {
 	u_int8_t		*data;
 	CURL			*curl;
 	char			*ct;
+	char 			path[64];
+	char 			url[128];
+
+	/* Read request path */
+	kore_task_channel_read(t, path, sizeof(path));
+	/* Read request url */
+	kore_task_channel_read(t, url, sizeof(url));
+
+	kore_log(LOG_NOTICE, "connecting to: %s", url);
 
 	if ((curl = curl_easy_init()) == NULL)
 		return (KORE_RESULT_ERROR);
 
 	b = kore_buf_create(128);
+	kore_log(LOG_NOTICE, "sending request: %s", path);
 
-	curl_easy_setopt(curl, CURLOPT_URL, BACKEND);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, b);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, b);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);
-
-	kore_log(LOG_NOTICE, "sending request");
 
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
+		kore_log(LOG_ERR, "request failed: %s", curl_easy_strerror(res));
 		kore_buf_free(b);
 		return (KORE_RESULT_ERROR);
 	}
