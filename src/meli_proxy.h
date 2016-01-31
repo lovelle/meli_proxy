@@ -25,6 +25,7 @@ int	meli_welcome(struct http_request *);
 int	meli_not_found(struct http_request *);
 size_t curl_write_cb(char *, size_t, size_t, void *);
 void meli_proxy_stats(redisContext *, char *);
+char *meli_fetch_addr(char *buf, size_t size, struct http_request *req);
 
 struct rstate {
 	struct kore_task	task;

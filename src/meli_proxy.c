@@ -28,7 +28,9 @@ int meli_proxy(struct http_request *req) {
 	u_int32_t	len;
 	struct rstate	*state;
 	char	ct[64], result[2048];
-	char 	url[strlen(BACKEND)+strlen(req->path)+1];
+	char	url[strlen(BACKEND)+strlen(req->path)+1];
+	char	addr[INET6_ADDRSTRLEN], time_taken[8];
+	u_int16_t	time_req = req->total;
 
 	if (req->hdlr_extra == NULL) {
 
@@ -41,12 +43,16 @@ int meli_proxy(struct http_request *req) {
 		strcpy(url, BACKEND);
 		strcat(url, req->path);
 
+		meli_fetch_addr(addr, sizeof(addr), req);
+
 		/* Start the task */
 		kore_task_run(&state->task);
 		/* write specify path */
 		kore_task_channel_write(&state->task, req->path, strlen(req->path));
 		/* write complete url */
 		kore_task_channel_write(&state->task, url, strlen(url));
+		/* write request ip */
+		kore_task_channel_write(&state->task, addr, strlen(addr));
 
 		/* Tell Kore to retry us later */
 		return (KORE_RESULT_RETRY);
@@ -78,7 +84,10 @@ int meli_proxy(struct http_request *req) {
 	if (len > sizeof(result)) {
 		http_response(req, 500, "response length mismatch", 24);
 	} else {
+		snprintf(time_taken, sizeof(time_taken), "%dms", time_req);
 		http_response_header(req, "Content-Type", ct);
+		http_response_header(req, "X-Server", SERVER);
+		http_response_header(req, "X-Response-Time", time_taken);
 		http_response(req, 200, result, len);
 	}
 
@@ -90,13 +99,13 @@ int meli_proxy(struct http_request *req) {
 
 
 int send_http(struct kore_task *t) {
-	redisContext *c;
+	redisContext	*c;
 	struct kore_buf	*b;
 	u_int32_t		len;
 	CURLcode		res;
 	u_int8_t		*data;
 	CURL			*curl;
-	char			*ct, path[64], url[128], http_key_code[32];
+	char			*ct, path[64], url[128], addr[INET6_ADDRSTRLEN], http_key_code[32];
 	long			http_code = 0;
 
 	c = redisConnectWithTimeout(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
@@ -105,6 +114,8 @@ int send_http(struct kore_task *t) {
 	kore_task_channel_read(t, path, sizeof(path));
 	/* Read request url */
 	kore_task_channel_read(t, url, sizeof(url));
+	/* Read request addr */
+	kore_task_channel_read(t, addr, sizeof(addr));
 
 	if (c == NULL || c->err) {
 		if (c) {
@@ -193,4 +204,22 @@ void meli_proxy_stats(redisContext *c, char *type) {
 	redisReply *reply;
 	reply = redisCommand(c,"HINCRBY %s %s 1", KEY_STATS, type);
 	freeReplyObject(reply);
+}
+
+char *meli_fetch_addr(char *buf, size_t size, struct http_request *req) {
+	char addr[size];
+
+	/* Set type of address */
+	if (req->owner->addrtype == AF_INET) {
+		memcpy(addr, &(req->owner->addr.ipv4.sin_addr),
+			sizeof(req->owner->addr.ipv4.sin_addr));
+	} else {
+		memcpy(addr, &(req->owner->addr.ipv6.sin6_addr),
+			sizeof(req->owner->addr.ipv6.sin6_addr));
+	}
+
+	if (inet_ntop(req->owner->addrtype, &(addr), buf, size) == NULL)
+			kore_strlcpy(buf, "unknown", size);
+
+	return buf;
 }
