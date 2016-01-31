@@ -73,7 +73,13 @@ int meli_proxy(struct http_request *req) {
 
 	if (kore_task_result(&state->task) == MELI_LIMITS_IP_REACHED) {
 		kore_task_destroy(&state->task);
-		http_response(req, 500, "Your ip have reached the max number of requests", 47);
+		http_response(req, 500, "Your ip reached the max number of requests", 47);
+		return (KORE_RESULT_OK);
+	}
+
+	if (kore_task_result(&state->task) == MELI_LIMITS_DEST_REACHED) {
+		kore_task_destroy(&state->task);
+		http_response(req, 500, "Your ip reached the max number of requests for this path", 56);
 		return (KORE_RESULT_OK);
 	}
 
@@ -145,9 +151,17 @@ int send_http(struct kore_task *t) {
 		return (MELI_REDIS_ERROR);
 	}
 
-	if (meli_fetch_addr_limits(c, addr) > MAX_ACCESS_PER_IP) {
-		kore_log(LOG_WARNING, "request limit reached by ip: %s", addr);
-		return (MELI_LIMITS_IP_REACHED);
+	switch (meli_fetch_addr_limits(c, addr, path)) {
+		case MELI_LIMITS_IP_REACHED:
+			kore_log(LOG_WARNING, "ip %s reached limit requests by attempts", addr);
+			return (MELI_LIMITS_IP_REACHED);
+
+		case MELI_LIMITS_DEST_REACHED:
+			kore_log(LOG_WARNING, "ip %s reached limit requests for path: %s", addr, path);
+			return (MELI_LIMITS_DEST_REACHED);
+
+		case MELI_LIMITS_OK:
+			break;
 	}
 
 	meli_proxy_stats(c, "requests_total_received");
@@ -229,17 +243,25 @@ void meli_proxy_stats(redisContext *c, char *type) {
 	freeReplyObject(reply);
 }
 
-long meli_fetch_addr_limits(redisContext *c, char *addr) {
+int meli_fetch_addr_limits(redisContext *c, char *addr, char *path) {
 	redisReply *reply;
-	long counter;
 	char key[11+INET6_ADDRSTRLEN];
 
 	snprintf(key, sizeof(key), "%s:%s", KEY_ALLOW, addr);
-	reply = redisCommand(c, "INCR %s", key);
-	counter = reply->integer;
+
+	reply = redisCommand(c, "HINCRBY %s requests 1", key);
 	freeReplyObject(reply);
 
-	return counter;
+	if (reply->integer > MAX_ACCESS_PER_IP)
+		return MELI_LIMITS_IP_REACHED;
+
+	reply = redisCommand(c, "HINCRBY %s %s 1", key, path);
+	freeReplyObject(reply);
+
+	if (reply->integer > MAX_ACCESS_PER_PATH)
+		return MELI_LIMITS_DEST_REACHED;
+
+	return MELI_LIMITS_OK;
 }
 
 char *meli_fetch_addr(char *buf, size_t size, struct http_request *req) {
