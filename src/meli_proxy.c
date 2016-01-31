@@ -71,6 +71,12 @@ int meli_proxy(struct http_request *req) {
 		return (KORE_RESULT_OK);
 	}
 
+	if (kore_task_result(&state->task) == MELI_LIMITS_IP_REACHED) {
+		kore_task_destroy(&state->task);
+		http_response(req, 500, "Your ip have reached the max number of requests", 47);
+		return (KORE_RESULT_OK);
+	}
+
 	/* Task is finished, check the result */
 	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
 		kore_task_destroy(&state->task);
@@ -101,21 +107,33 @@ int meli_proxy(struct http_request *req) {
 int send_http(struct kore_task *t) {
 	redisContext	*c;
 	struct kore_buf	*b;
-	u_int32_t		len;
+	u_int32_t		len, len_addr, len_url, len_path;
 	CURLcode		res;
 	u_int8_t		*data;
 	CURL			*curl;
-	char			*ct, path[64], url[128], addr[INET6_ADDRSTRLEN], http_key_code[32];
 	long			http_code = 0;
+	char			*ct, http_key_code[32];
+	char			url[128], unformat_url[128];
+	char			path[64], unformat_path[64];
+	char			addr[INET6_ADDRSTRLEN], unformat_addr[INET6_ADDRSTRLEN];
 
 	c = redisConnectWithTimeout(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
 
 	/* Read request path */
-	kore_task_channel_read(t, path, sizeof(path));
+	len_path = kore_task_channel_read(t, unformat_path, sizeof(unformat_path));
 	/* Read request url */
-	kore_task_channel_read(t, url, sizeof(url));
+	len_url = kore_task_channel_read(t, unformat_url, sizeof(unformat_url));
 	/* Read request addr */
-	kore_task_channel_read(t, addr, sizeof(addr));
+	len_addr = kore_task_channel_read(t, unformat_addr, sizeof(unformat_addr));
+
+	if (!kore_snprintf(addr, sizeof(addr), NULL, "%.*s", len_addr, unformat_addr))
+			return (KORE_RESULT_ERROR);
+
+	if (!kore_snprintf(url, sizeof(url), NULL, "%.*s", len_url, unformat_url))
+			return (KORE_RESULT_ERROR);
+
+	if (!kore_snprintf(path, sizeof(path), NULL, "%.*s", len_path, unformat_path))
+			return (KORE_RESULT_ERROR);
 
 	if (c == NULL || c->err) {
 		if (c) {
@@ -125,6 +143,11 @@ int send_http(struct kore_task *t) {
 			kore_log(LOG_ERR, "Connection error: can't allocate redis context");
 		}
 		return (MELI_REDIS_ERROR);
+	}
+
+	if (meli_fetch_addr_limits(c, addr) > MAX_ACCESS_PER_IP) {
+		kore_log(LOG_WARNING, "request limit reached by ip: %s", addr);
+		return (MELI_LIMITS_IP_REACHED);
 	}
 
 	meli_proxy_stats(c, "requests_total_received");
@@ -204,6 +227,19 @@ void meli_proxy_stats(redisContext *c, char *type) {
 	redisReply *reply;
 	reply = redisCommand(c,"HINCRBY %s %s 1", KEY_STATS, type);
 	freeReplyObject(reply);
+}
+
+long meli_fetch_addr_limits(redisContext *c, char *addr) {
+	redisReply *reply;
+	long counter;
+	char key[11+INET6_ADDRSTRLEN];
+
+	snprintf(key, sizeof(key), "%s:%s", KEY_ALLOW, addr);
+	reply = redisCommand(c, "INCR %s", key);
+	counter = reply->integer;
+	freeReplyObject(reply);
+
+	return counter;
 }
 
 char *meli_fetch_addr(char *buf, size_t size, struct http_request *req) {
