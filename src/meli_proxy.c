@@ -59,6 +59,12 @@ int meli_proxy(struct http_request *req) {
 		return (KORE_RESULT_RETRY);
 	}
 
+	if (kore_task_result(&state->task) == MELI_REDIS_ERROR) {
+		kore_task_destroy(&state->task);
+		http_response(req, 500, "Connection error to redis", 25);
+		return (KORE_RESULT_OK);
+	}
+
 	/* Task is finished, check the result */
 	if (kore_task_result(&state->task) != KORE_RESULT_OK) {
 		kore_task_destroy(&state->task);
@@ -84,24 +90,40 @@ int meli_proxy(struct http_request *req) {
 
 
 int send_http(struct kore_task *t) {
+	redisContext *c;
 	struct kore_buf	*b;
 	u_int32_t		len;
 	CURLcode		res;
 	u_int8_t		*data;
 	CURL			*curl;
-	char			*ct;
-	char 			path[64];
-	char 			url[128];
+	char			*ct, path[64], url[128], http_key_code[32];
+	long			http_code = 0;
+
+	c = redisConnectWithTimeout(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
 
 	/* Read request path */
 	kore_task_channel_read(t, path, sizeof(path));
 	/* Read request url */
 	kore_task_channel_read(t, url, sizeof(url));
 
+	if (c == NULL || c->err) {
+		if (c) {
+			kore_log(LOG_ERR, "Connection error: %s", c->errstr);
+			redisFree(c);
+		} else {
+			kore_log(LOG_ERR, "Connection error: can't allocate redis context");
+		}
+		return (MELI_REDIS_ERROR);
+	}
+
+	meli_proxy_stats(c, "requests_total_received");
+
 	kore_log(LOG_NOTICE, "connecting to: %s", url);
 
-	if ((curl = curl_easy_init()) == NULL)
+	if ((curl = curl_easy_init()) == NULL) {
+		meli_proxy_stats(c, "requests_failed");
 		return (KORE_RESULT_ERROR);
+	}
 
 	b = kore_buf_create(128);
 	kore_log(LOG_NOTICE, "sending request: %s", path);
@@ -112,11 +134,21 @@ int send_http(struct kore_task *t) {
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, b);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);
 
+	meli_proxy_stats(c, "requests_total_processed");
+
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
 		kore_log(LOG_ERR, "request failed: %s", curl_easy_strerror(res));
+		meli_proxy_stats(c, "requests_failed");
 		kore_buf_free(b);
 		return (KORE_RESULT_ERROR);
+	} else {
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	}
+
+	if (http_code != 200) {
+		snprintf(http_key_code, sizeof(http_key_code), "requests_failed_http_%lu", http_code);
+		meli_proxy_stats(c, http_key_code);
 	}
 
 	kore_log(LOG_NOTICE, "recevied request");
@@ -136,10 +168,16 @@ int send_http(struct kore_task *t) {
 	/* Grab content type */
 	kore_task_channel_write(t, ct, strlen(ct));
 
+	/* Free data */
 	kore_mem_free(data);
 
-	/* always cleanup */ 
+	/* always cleanup */
 	curl_easy_cleanup(curl);
+
+	meli_proxy_stats(c, "requests_successful");
+
+	/* Disconnects and frees the context */
+	redisFree(c);
 
 	return (KORE_RESULT_OK);
 }
@@ -149,4 +187,10 @@ size_t curl_write_cb(char *ptr, size_t size, size_t nmemb, void *udata) {
 
 	kore_buf_append(b, ptr, size * nmemb);
 	return (size * nmemb);
+}
+
+void meli_proxy_stats(redisContext *c, char *type) {
+	redisReply *reply;
+	reply = redisCommand(c,"HINCRBY %s %s 1", KEY_STATS, type);
+	freeReplyObject(reply);
 }
