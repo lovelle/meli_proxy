@@ -13,18 +13,18 @@ Compiled with NOTLS=1 and TASKS=1
 Installation
 ----
 
-1 Install Linux deps (curl dev files and redis dev files)
+1. Install Linux deps (curl dev files and redis dev files)
 
 	$ aptitude install libcurl-dev libhiredis-dev libevent-pthreads-2.0-5
 
-2 Install [Kore](https://github.com/jorisvink/kore#building-kore) with proper env variables
+2. Install [Kore](https://github.com/jorisvink/kore#building-kore) with proper env variables
 
 	$ git clone https://github.com/jorisvink/kore
 	$ cd kore
 	$ export NOTLS=1 TASKS=1
 	$ make; make install
 
-3 Install meli_proxy
+3. Install meli_proxy
 
 	$ git clone https://github.com/lovelle/meli_proxy.git
 	$ cd meli_proxy
@@ -42,7 +42,7 @@ Configure and start the server
 Doc
 ----
 
-* 1 Stats
+1. Stats
 
 For stats data is stored into redis database with Hash set for data structure.
 
@@ -61,9 +61,9 @@ Example for stats:
 ```
 
 
-* 2 Allow module
+2. Allow module
 
-Allow module àlso uses hash set for data struct.
+Allow module also uses hash set for data struct.
 
 But the key, is created for ip received.
 
