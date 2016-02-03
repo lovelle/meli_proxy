@@ -17,7 +17,8 @@ def make_map(app):
 
     urldispatch = [
         url(app, '/info', 'stats.info', methods=GET, desc="DEBUG_1[stats info]"),
-        url(app, '/categories/<string:query>', meli_proxy, methods=GET_POST, desc="meli_proxy")
+        # url(app, '/categories/<string:query>', meli_proxy, methods=GET_POST, desc="meli_proxy")
+        url(app, '/<string:init>/<string:query>', meli_proxy, methods=GET_POST, desc="meli_proxy")
     ]
 
     return urldispatch

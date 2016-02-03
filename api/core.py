@@ -29,7 +29,7 @@ class MeliProxy(MethodView):
     def __init__(self):
         self.method = request.args if request.method == "GET" else request.post
 
-    def get(self, query, format="json"):
+    def get(self, init, query, format="json"):
         app.log.debug("received new request")
 
         if not query:
@@ -40,7 +40,7 @@ class MeliProxy(MethodView):
         if not lb.load_balance("categories", "*"):
             raise MeliServiceUnavailable("Service overloaded")
 
-        r = HttpRequest(lb.node, "categories")
+        r = HttpRequest(lb.node, init)
 
         # TODO: arreglar excepciones de clases
 
