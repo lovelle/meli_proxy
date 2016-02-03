@@ -29,6 +29,7 @@ LOGGER_DATE = "%d-%m-%Y %H:%M:%S"
 
 REDIS_KEY_SERVERS = "meli:lb:servers"
 
+"""
 REDIS_SLAVE_HOST = "127.0.0.1"
 REDIS_SLAVE_PORT = 6379
 REDIS_SLAVE_TIMEOUT = 2
@@ -36,5 +37,6 @@ REDIS_SLAVE_TIMEOUT = 2
 REDIS_MASTER_HOST = "127.0.0.1"
 REDIS_MASTER_PORT = 6379
 REDIS_MASTER_TIMEOUT = 2
+"""
 
 # ip de origen o token para la restriccion por origen?

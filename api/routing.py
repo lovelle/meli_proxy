@@ -16,7 +16,8 @@ def make_map(app):
     meli_proxy = MeliProxy.as_view('meli')
 
     urldispatch = [
-        url(app, '/info', 'stats.info', methods=GET, desc="DEBUG_1[stats info]"),
+        url(app, '/stats', 'debug.stats', methods=GET, desc="DEBUG_0[stats info]"),
+        url(app, '/routes', 'debug.routes', methods=GET, desc="DEBUG_1[routes info]"),
         # url(app, '/categories/<string:query>', meli_proxy, methods=GET_POST, desc="meli_proxy")
         url(app, '/<string:init>/<string:query>', meli_proxy, methods=GET_POST, desc="meli_proxy")
     ]
