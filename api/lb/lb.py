@@ -19,7 +19,7 @@ class Lb(Stats):
         self.r_m = self.redis_connect("master")
 
     def redis_connect(self, environ="slave"):
-        with RedisHandler(app.config, environ=environ) as obj:
+        with RedisHandler(app.myredis, environ=environ) as obj:
             if isinstance(obj, basestring):
                 raise MeliServiceUnavailable(obj)
             else:

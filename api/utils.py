@@ -11,6 +11,7 @@ import redis
 import logging
 
 from .helpers import LazyView
+from urlparse import urlparse
 
 
 def setup_log_handlers(
@@ -57,13 +58,15 @@ class RedisHandler(object):
         "slave": {"host": "localhost", "port": 6379, "tout": 2}
     }
 
-    def __init__(self, conf, environ=False):
-        self.instances["master"]["host"] = conf.get("REDIS_MASTER_HOST")
-        self.instances["master"]["port"] = int(conf.get("REDIS_MASTER_PORT", 6379))
-        self.instances["master"]["tout"] = int(conf.get("REDIS_MASTER_TIMEOUT", 5))
-        self.instances["slave"]["host"] = conf.get("REDIS_SLAVE_HOST")
-        self.instances["slave"]["port"] = int(conf.get("REDIS_SLAVE_PORT", 6379))
-        self.instances["slave"]["tout"] = int(conf.get("REDIS_SLAVE_TIMEOUT", 5))
+    def __init__(self, myredis, environ=False):
+        r = urlparse(myredis)
+        self.password = r.password
+        self.instances["master"]["host"] = r.hostname
+        self.instances["master"]["port"] = int(r.port)
+        self.instances["master"]["tout"] = 5
+        self.instances["slave"]["host"] = r.hostname
+        self.instances["slave"]["port"] = int(r.port)
+        self.instances["slave"]["tout"] = 5
         self.environ = environ
 
     def __enter__(self):
@@ -80,6 +83,7 @@ class RedisHandler(object):
             self.instances[env]["handler"] = redis.ConnectionPool(
                 host=self.instances[env]["host"],
                 port=self.instances[env]["port"],
+                password=self.password,
                 socket_timeout=self.instances[env]["tout"],
                 db=0
             )

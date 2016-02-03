@@ -28,8 +28,10 @@ def load_app(app_name, settings_override):
         formfmt=app.config.get("LOGGER_FORMAT")
     )
 
+    app.myredis = os.environ.get('REDIS_URL')
+
     # Check if all redis instances configured are running
-    with RedisHandler(app.config) as obj:
+    with RedisHandler(app.myredis) as obj:
         [write_stderr(i, app.log) for i in obj if isinstance(i, basestring)]
 
     # app.servers = app.config.get('LB_SERVERS')
