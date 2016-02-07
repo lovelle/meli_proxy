@@ -15,29 +15,37 @@ Installation
 
 1. Install Linux deps (curl dev files and redis dev files)
 
+```
 	$ aptitude install libcurl-dev libhiredis-dev libevent-pthreads-2.0-5
+```
 
 2. Install [Kore](https://github.com/jorisvink/kore#building-kore) with proper env variables
 
+```
 	$ git clone https://github.com/jorisvink/kore
 	$ cd kore
 	$ export NOTLS=1 TASKS=1
 	$ make; make install
+```
 
 3. Install meli_proxy
 
+```
 	$ git clone https://github.com/lovelle/meli_proxy.git
 	$ cd meli_proxy
 	$ git checkout c
 	$ kore build
+```
 
 Configure and start the server
 ----
+```
     $ cd meli_proxy
     # Adjust listen address
     $ editor conf/meli_proxy.conf
     # Run!
     $ kore run
+```
 
 Doc
 ----
