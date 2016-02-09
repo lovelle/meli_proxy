@@ -22,9 +22,8 @@ from .exceptions import (
 
 
 class MeliProxy(MethodView):
-
     decorators = [dictify]
-    valid_methods = ("categories")
+    valid_methods = ("categories", "sites")
 
     def __init__(self):
         self.method = request.args if request.method == "GET" else request.post
@@ -37,25 +36,16 @@ class MeliProxy(MethodView):
 
         lb = StateFul(request.remote_addr, query)
 
-        if not lb.load_balance("categories", "*"):
+        if not lb.load_balance("*"):
             raise MeliServiceUnavailable("Service overloaded")
 
         r = HttpRequest(lb.node, init)
 
-        # TODO: arreglar excepciones de clases
-
         try:
             r.send(query)
-        #except MeliHttpErrorCode, e:
-        #    raise e
-        #except MeliHttpErrorValue, e:
-        #    raise e
-        #except MeliHttpErrorGeneric, e:
-        #    raise e
         except MeliError, e:
             raise e
 
-        #print lb.node
         return r.response
 
     def post(self):

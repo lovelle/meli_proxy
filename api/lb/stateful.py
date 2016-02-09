@@ -20,7 +20,7 @@ class StateFul(Lb):
         self.qry = query
         self.r_s = self.redis_connect()
 
-    def load_balance(self, gid, resource):
+    def load_balance(self, gid):
         # self.node = self.get_node_randomly()
         self.node = self.get_node_least_loaded(gid)
 
