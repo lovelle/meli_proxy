@@ -71,7 +71,7 @@ int meli_stats(struct http_request *req) {
 int meli_proxy(struct http_request *req) {
 	u_int32_t	len;
 	struct rstate	*state;
-	char	ct[64], result[2048];
+	char	ct[64], result[2048], http_code[4];
 	char	url[strlen(BACKEND)+strlen(req->path)+1];
 	char	addr[INET6_ADDRSTRLEN], time_taken[8];
 	u_int16_t	time_req = req->total;
@@ -135,6 +135,7 @@ int meli_proxy(struct http_request *req) {
 	}
 
 	len = kore_task_channel_read(&state->task, result, sizeof(result));
+	kore_task_channel_read(&state->task, http_code, sizeof(http_code));
 	kore_task_channel_read(&state->task, ct, sizeof(ct));
 	
 	if (len > sizeof(result)) {
@@ -144,7 +145,7 @@ int meli_proxy(struct http_request *req) {
 		http_response_header(req, "Content-Type", ct);
 		http_response_header(req, "X-Server", SERVER);
 		http_response_header(req, "X-Response-Time", time_taken);
-		http_response(req, 200, result, len);
+		http_response(req, atoi(http_code), result, len);
 	}
 
 	/* destroy the task */
@@ -161,7 +162,7 @@ int send_http(struct kore_task *t) {
 	u_int8_t		*data;
 	CURL			*curl;
 	long			http_code = 0;
-	char			*ct, http_key_code[32];
+	char			*ct, http_key_code[32], recv_http_code[4];
 	char			url[128], unformat_url[128];
 	char			path[64], unformat_path[64];
 	char			addr[INET6_ADDRSTRLEN], unformat_addr[INET6_ADDRSTRLEN];
@@ -229,9 +230,9 @@ int send_http(struct kore_task *t) {
 
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK) {
+		kore_buf_free(b);
 		kore_log(LOG_ERR, "request failed: %s", curl_easy_strerror(res));
 		meli_proxy_stats(c, "requests_failed");
-		kore_buf_free(b);
 		return (KORE_RESULT_ERROR);
 	} else {
 		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
@@ -255,6 +256,10 @@ int send_http(struct kore_task *t) {
 
 	/* Grab data */
 	kore_task_channel_write(t, data, len);
+
+	/* Grab http code */
+	sprintf(recv_http_code, "%lu", http_code);
+	kore_task_channel_write(t, recv_http_code, strlen(recv_http_code));
 
 	/* Grab content type */
 	kore_task_channel_write(t, ct, strlen(ct));
