@@ -28,6 +28,7 @@ const char *KEY_ALLOW = "meli:allow";
 
 int	send_http(struct kore_task *);
 int	meli_proxy(struct http_request *);
+int	meli_stats(struct http_request *);
 int	meli_welcome(struct http_request *);
 int	meli_not_found(struct http_request *);
 size_t	curl_write_cb(char *, size_t, size_t, void *);

@@ -16,13 +16,57 @@ int meli_not_found(struct http_request *req) {
 	return (KORE_RESULT_OK);
 }
 
-
 int meli_welcome(struct http_request *req) {
 	char *hello = "Bienvenido a meli proxy ;)";
 	http_response(req, 200, hello, strlen(hello));
 	return (KORE_RESULT_OK);
 }
 
+int meli_stats(struct http_request *req) {
+	redisReply *reply;
+	redisContext *c;
+	unsigned int i;
+	struct kore_buf	*buf;
+
+	/* Read the entire received body into a memory buffer. */
+	buf = kore_buf_create(128);
+
+	c = redisConnectWithTimeout(REDIS_HOST, REDIS_PORT, REDIS_TIMEOUT);
+	if (c == NULL || c->err) {
+		if (c) {
+			kore_log(LOG_ERR, "Connection error: %s", c->errstr);
+			redisFree(c);
+		} else {
+			kore_log(LOG_ERR, "Connection error: can't allocate redis context");
+		}
+		http_response(req, 500, "Connection error to redis", 25);
+		return (KORE_RESULT_OK);
+	}
+
+	reply = redisCommand(c, "HGETALL %s", KEY_STATS);
+
+	if (reply->type == REDIS_REPLY_ERROR || reply->type != REDIS_REPLY_ARRAY) {
+		if (reply->type == REDIS_REPLY_ERROR)
+			kore_log(LOG_ERR, "Error %s", reply->str);
+		else if ( reply->type != REDIS_REPLY_ARRAY)
+			kore_log(LOG_ERR, "Unexpected type %d", reply->type);
+
+		http_response(req, 500, "Connection error to redis", 25);
+		return (KORE_RESULT_OK);
+	}
+
+	kore_buf_appendf(buf, "%s: \r", SERVER);
+
+	for (i = 0; i < reply->elements; i = i + 2)
+		kore_buf_appendf(buf, "%s: %s \n", reply->element[i]->str, reply->element[i + 1]->str);
+
+	freeReplyObject(reply);
+
+	/* Respond to the client. */
+	http_response(req, 200, buf->data, buf->offset);
+	kore_buf_free(buf);
+	return (KORE_RESULT_OK);
+}
 
 int meli_proxy(struct http_request *req) {
 	u_int32_t	len;
@@ -108,7 +152,6 @@ int meli_proxy(struct http_request *req) {
 
 	return (KORE_RESULT_OK);
 }
-
 
 int send_http(struct kore_task *t) {
 	redisContext	*c;
