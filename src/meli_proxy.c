@@ -222,6 +222,9 @@ int send_http(struct kore_task *t) {
 
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, TIMEOUT);
+	/* Some servers don't like requests that are made without a user-agent field, so we provide one */
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, SERVER);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, b);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);

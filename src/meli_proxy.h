@@ -15,6 +15,7 @@
 
 const char *SERVER = "MeliProxy1";
 const char *BACKEND = "https://api.mercadolibre.com";
+const int TIMEOUT = 5;
 
 const long MAX_ACCESS_PER_IP = 100;
 const long MAX_ACCESS_PER_PATH = 5;
